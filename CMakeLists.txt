@@ -60,6 +60,7 @@ set (CMAKE_CXX_STANDARD 11)
 
 include_directories(
     ${CMAKE_BINARY_DIR}
+    externals/draco/src/
     externals/glm/
     externals/
     src/
