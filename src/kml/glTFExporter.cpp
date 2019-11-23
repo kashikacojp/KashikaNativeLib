@@ -2263,13 +2263,32 @@ namespace kml
                         colorFactor.push_back(picojson::value(A));
                         pbrMetallicRoughness["baseColorFactor"] = picojson::value(colorFactor);
 
-                        if (A >= 1.0f)
+                        std::string alphaMode = mat->GetString("AlphaMode");
+                        if(alphaMode == "")
                         {
-                            nd["alphaMode"] = picojson::value("OPAQUE");
+                            alphaMode = "OPAQUE";
+                            if (A < 1.0f)
+                            {
+                                alphaMode = "BLEND";                        nd["alphaMode"] = picojson::value("BLEND");
+                            }
                         }
-                        else
+                    
+                        nd["alphaMode"] = picojson::value(alphaMode);
+                        if(alphaMode == "MASK")
                         {
-                            nd["alphaMode"] = picojson::value("BLEND");
+                            float alphaCutout = mat->GetFloat("AlphaCutoff");
+                            nd["alphaCutoff"] = picojson::value(alphaCutout);
+                        }        
+                    }
+
+                    {
+                        std::string shadingMode = mat->GetString("ShadingMode");
+                        if(shadingMode == "UNLIT")
+                        {
+                            picojson::object extensions;
+                            picojson::object KHR_materials_unlit;
+                            extensions["KHR_materials_unlit"] = picojson::value(KHR_materials_unlit);
+                            nd["extensions"] = picojson::value(extensions);
                         }
                     }
 

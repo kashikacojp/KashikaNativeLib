@@ -75,6 +75,7 @@ add_library( kil STATIC
     ./src/kil/CopyTextureFile_GdiPlus.cpp
     ./src/kil/CopyTextureFile_STB.cpp
     ./src/kil/ResizeTextureFile.cpp
+    ./src/kil/HasAlphaChannel.cpp
 )
 
 # -- KML lib ------------------------------------

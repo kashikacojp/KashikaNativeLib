@@ -36,17 +36,21 @@ namespace kil
         {
             int q = std::max<int>(0, std::min<int>(int(quality * 100), 100));
             stbi_write_jpg(dstPath.c_str(), width, height, channels, buffer, q);
+            stbi_image_free(buffer);
         }
         else if (ext == ".png")
         {
             stbi_write_png(dstPath.c_str(), width, height, channels, buffer, 0);
+            stbi_image_free(buffer);
         }
         else if (ext == ".bmp")
         {
             stbi_write_bmp(dstPath.c_str(), width, height, channels, buffer);
+            stbi_image_free(buffer);
         }
         else if (ext == ".gif")
         {
+            stbi_image_free(buffer);
             return false;
         }
         return true;
