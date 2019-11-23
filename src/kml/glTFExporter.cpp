@@ -2210,6 +2210,18 @@ namespace kml
                         emissiveFactor.push_back(picojson::value(G));
                         emissiveFactor.push_back(picojson::value(B));
                         nd["emissiveFactor"] = picojson::value(emissiveFactor);
+
+                        std::shared_ptr<kml::Texture> tex = mat->GetTexture("Emission");
+                        if (tex)
+                        {
+                            int nIndex = FindTextureIndex(texture_vec, tex);
+                            if (nIndex >= 0)
+                            {
+                                picojson::object emmisveTexture;
+                                emmisveTexture["index"] = picojson::value((double)nIndex);
+                                nd["emissiveTexture"] = picojson::value(emmisveTexture);
+                            }
+                        }
                     }
 
                     picojson::object pbrMetallicRoughness;
