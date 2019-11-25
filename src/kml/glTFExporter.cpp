@@ -2844,6 +2844,32 @@ namespace kml
             root_object["extensions"] = picojson::value(extensions);
             return true;
         }
+
+        static std::vector<std::string> GetMaterialExtensionNames(const picojson::object& root_object)
+        {
+            typedef picojson::object::const_iterator const_iterator;
+            std::vector<std::string> names;
+            const_iterator it = root_object.find("materials");
+            if(it != root_object.end())
+            {
+                picojson::array materials = it->second.get<picojson::array>();
+                for(size_t i = 0; i < materials.size(); i++)
+                {
+                    picojson::object mat = materials[i].get<picojson::object>();
+                    if(mat.find("extensions") != mat.end())
+                    {
+                        picojson::object extensions = mat["extensions"].get<picojson::object>();
+                        for(const_iterator mit = extensions.begin(); mit != extensions.end(); mit++)
+                        {
+                            names.push_back(mit->first);
+                        }
+                    }
+                }
+            }
+            std::sort(names.begin(), names.end());
+            names.erase(std::unique(names.begin(), names.end()), names.end());
+            return names;
+        }
     } // namespace gltf
     //-----------------------------------------------------------------------------
 
@@ -2913,10 +2939,16 @@ namespace kml
 
 #ifdef ENABLE_LTE_PBR_MATERIAL
             // LTE extention
-            extensionsUsed.push_back(picojson::value("LTE_PBR_material"));
-            extensionsUsed.push_back(picojson::value("LTE_aiStandardHair_material"));
+            //extensionsUsed.push_back(picojson::value("LTE_PBR_material"));
+            //extensionsUsed.push_back(picojson::value("LTE_aiStandardHair_material"));
             extensionsUsed.push_back(picojson::value("LTE_UDIM_texture"));
 #endif
+
+            std::vector<std::string> mat_extension_names = gltf::GetMaterialExtensionNames(root_object);
+            for(size_t j = 0; j < mat_extension_names.size(); j++)
+            {
+                extensionsUsed.push_back(picojson::value(mat_extension_names[j]));
+            }
 
             if (!extensionsUsed.empty())
             {
