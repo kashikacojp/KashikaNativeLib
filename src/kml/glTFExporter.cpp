@@ -2919,6 +2919,19 @@ namespace kml
             root_object["asset"] = picojson::value(asset);
         }
 
+        if (!gltf::NodeToGLTF(root_object, reg, node, output_bin, output_draco))
+        {
+            return false;
+        }
+
+        if (vrm_export)
+        {
+            if (!gltf::WriteVRMMetaInfo(root_object, node, opts))
+            {
+                return false;
+            }
+        }
+
         {
             picojson::array extensionsUsed;
             picojson::array extensionsRequired;
@@ -2957,19 +2970,6 @@ namespace kml
             if (!extensionsRequired.empty())
             {
                 root_object["extensionsRequired"] = picojson::value(extensionsRequired);
-            }
-        }
-
-        if (!gltf::NodeToGLTF(root_object, reg, node, output_bin, output_draco))
-        {
-            return false;
-        }
-
-        if (vrm_export)
-        {
-            if (!gltf::WriteVRMMetaInfo(root_object, node, opts))
-            {
-                return false;
             }
         }
 
