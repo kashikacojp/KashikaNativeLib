@@ -1696,11 +1696,8 @@ namespace kml
             return picojson::value(LTE_hair_material);
         }
 
-        static picojson::value createLTE_material_extensions(const std::shared_ptr<kml::Material> mat, const std::vector<std::shared_ptr<kml::Texture> >& texture_vec)
+        static void createLTE_material_extensions(picojson::object& extensions, const std::shared_ptr<kml::Material> mat, const std::vector<std::shared_ptr<kml::Texture> >& texture_vec)
         {
-            // Output LTE_PBR_material
-            picojson::object extensions;
-
             bool isHairMaterial = (mat->GetInteger("aiStandardHair") == 1) ? true : false;
 
             if (isHairMaterial)
@@ -1712,8 +1709,6 @@ namespace kml
                 // Fallback to default PBR material.
                 extensions["LTE_PBR_material"] = createLTE_pbr_material(mat, texture_vec);
             }
-
-            return picojson::value(extensions);
         }
 #endif // ENABLE_LTE_PBR_MATERIAL
 
@@ -2281,14 +2276,13 @@ namespace kml
                         }        
                     }
 
+                    picojson::object extensions;
                     {
                         std::string shadingMode = mat->GetString("ShadingMode");
                         if(shadingMode == "UNLIT")
                         {
-                            picojson::object extensions;
                             picojson::object KHR_materials_unlit;
                             extensions["KHR_materials_unlit"] = picojson::value(KHR_materials_unlit);
-                            nd["extensions"] = picojson::value(extensions);
                         }
                     }
 
@@ -2298,9 +2292,13 @@ namespace kml
 
 #ifdef ENABLE_LTE_PBR_MATERIAL
                     // LTE extenstion
-                    nd["extensions"] = createLTE_material_extensions(mat, texture_vec);
+                    createLTE_material_extensions(extensions, mat, texture_vec);
 #endif
-
+                    if (!extensions.empty())
+                    {
+                        nd["extensions"] = picojson::value(extensions);
+                    }
+                    
                     ar.push_back(picojson::value(nd));
                 }
                 root["materials"] = picojson::value(ar);
