@@ -29,7 +29,55 @@ namespace kil
         return "";
     }
 
-    bool ResizeTextureFile_STB(const std::string& orgPath, const std::string& dstPath, int maximum_size, int resize_size, float quality)
+    static bool IsPowerOfTwo(int x)
+    {
+        if (x <= 0)
+        {
+            return false;
+        }
+        else
+        {
+            return (x & (x - 1)) == 0;
+        }
+    }
+
+    static bool IsNeededToResize(int width, int height, int maximum_size, bool is_poweroftwo = false, bool is_squared = false)
+    {
+        bool bRet = false;
+        if (maximum_size <= width || maximum_size <= height)
+        {
+            bRet = true;
+        }
+        if (is_poweroftwo)
+        {
+            if (!IsPowerOfTwo(width) || !IsPowerOfTwo(height))
+            {
+                bRet = true;
+            }
+        }
+        if (is_squared)
+        {
+            if (width != height)
+            {
+                bRet = true;
+            }
+        }
+        return bRet;
+    }
+
+    static int GetPowerOfTwo(int x)
+    {
+        x--;
+        x |= x >> 1;
+        x |= x >> 2;
+        x |= x >> 4;
+        x |= x >> 8;
+        x |= x >> 16;
+        x++;
+        return x;
+    }
+
+    bool ResizeTextureFile_STB(const std::string& orgPath, const std::string& dstPath, int maximum_size, int resize_size, bool is_poweroftwo, bool is_squared, float quality)
     {
         int width = 0;
         int height = 0;
@@ -40,7 +88,34 @@ namespace kil
             return false;
         }
 
-        if (width <= maximum_size && height <= maximum_size)
+        bool resizeSize = false;
+        bool resizePowerOfTwo = false;
+        bool resizeSquared = false;
+        if(maximum_size != 0)
+        {
+            if (maximum_size <= width || maximum_size <= height)
+            {
+                resizeSize = true;
+            }
+        }
+        if (is_poweroftwo)
+        {
+            if (!IsPowerOfTwo(width) || !IsPowerOfTwo(height))
+            {
+                resizePowerOfTwo = true;
+            }
+        }
+        if (is_squared)
+        {
+            if (width != height)
+            {
+                resizeSquared = true;
+            }
+        }
+
+        bool is_needed_to_resize = resizeSize | resizePowerOfTwo | resizeSquared;
+
+        if (!is_needed_to_resize)
         {
             if (buffer)
             {
@@ -49,11 +124,38 @@ namespace kil
             return CopyTextureFile(orgPath, dstPath, quality);
         }
 
-        float factor = resize_size / ((float)std::max<int>(width, height));
+        int nw = width;
+        int nh = height;
+        stbi_uc* nbuffer = NULL;
+        if (resizeSize && !is_poweroftwo && !is_squared)
+        {
+            float factor = resize_size / ((float)std::max<int>(width, height));
+            nw = (int)floor(width * factor);
+            nh = (int)floor(height * factor);
+            nbuffer = (unsigned char*)malloc(sizeof(unsigned char) * nw * nh * channels);
+        }
+        else
+        {
+            if(resizeSize)
+            {
+                float factor = resize_size / ((float)std::max<int>(width, height));
+                nw = (int)floor(width * factor);
+                nh = (int)floor(height * factor);
+            }
+            if(is_poweroftwo)
+            {
+                nw = GetPowerOfTwo(nw);
+                nh = GetPowerOfTwo(nh);
+            }
+            if(is_squared)
+            {
+                int max_width = std::max<int>(nw, nh);
+                nw = max_width;
+                nh = max_width;
+            }
+            nbuffer = (unsigned char*)malloc(sizeof(unsigned char) * nw * nh * channels);
+        }
 
-        int nw = (int)floor(width * factor);
-        int nh = (int)floor(height * factor);
-        stbi_uc* nbuffer = (unsigned char*)malloc(sizeof(unsigned char) * nw * nh * channels);
         if (!stbir_resize_uint8(buffer, width, height, 0, nbuffer, nw, nh, 0, channels))
         {
             if (nbuffer)
@@ -129,7 +231,7 @@ namespace kil
 #endif
     }
 
-    bool ResizeTextureFile(const std::string& orgPath, const std::string& dstPath, int maximum_size, int resize_size, float quality)
+    bool ResizeTextureFile(const std::string& orgPath, const std::string& dstPath, int maximum_size, int resize_size, bool is_poweroftwo, bool is_squared, float quality)
     {
         std::string ext = GetExt(orgPath);
         if (ext == ".tiff" || ext == ".tif")
@@ -139,13 +241,13 @@ namespace kil
             bRet = CopyTextureFile(orgPath, tmpPath, quality);
             if (!bRet)
                 return bRet;
-            bRet = ResizeTextureFile_STB(tmpPath, dstPath, maximum_size, resize_size, quality);
+            bRet = ResizeTextureFile_STB(tmpPath, dstPath, maximum_size, resize_size, is_poweroftwo, is_squared, quality);
             RemoveFile(tmpPath);
             return bRet;
         }
         else
         {
-            return ResizeTextureFile_STB(orgPath, dstPath, maximum_size, resize_size, quality);
+            return ResizeTextureFile_STB(orgPath, dstPath, maximum_size, resize_size, is_poweroftwo, is_squared, quality);
         }
     }
 } // namespace kil
