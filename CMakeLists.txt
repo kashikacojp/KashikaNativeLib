@@ -89,6 +89,7 @@ add_library( kml STATIC
     ./src/kml/CalculateNormalsMesh.cpp
     ${Compatibility}
     ./src/kml/FlatIndicesMesh.cpp
+    ./src/kml/GLB2GLTF.cpp
     ./src/kml/GLTF2GLB.cpp
     ./src/kml/glTFExporter.cpp
     ./src/kml/Material.cpp
